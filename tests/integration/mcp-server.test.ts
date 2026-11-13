@@ -83,6 +83,10 @@ describe("MCP server (stdio-equivalent, in-memory transport)", () => {
       "database_preview_changes",
       "database_apply_changes",
       "rollback_transaction",
+      "render_map",
+      "get_map_passability",
+      "get_tile_info",
+      "find_path",
     ]) {
       expect(tools, name).toContain(name);
     }
@@ -163,6 +167,27 @@ describe("MCP server (stdio-equivalent, in-memory transport)", () => {
     expect(data(refused)).toMatchObject({ error: { code: "CONFIRMATION_REQUIRED" } });
     const ok = data(await c.callTool({ name: "apply_changes", arguments: { changeSetId: id, confirm: id, acknowledgeWarnings: true } }));
     expect(ok.success).toBe(true);
+  });
+
+  it("shows maps: image + text, passability grid, tile info and paths", async () => {
+    const c = await connect([FIXTURE_ROOT], false);
+    const img = (await c.callTool({ name: "render_map", arguments: { mapId: 3, overlay: "reachable" } })) as CallToolResult;
+    expect(img.isError).toBeFalsy();
+    const image = img.content.find((x) => x.type === "image") as { data: string; mimeType: string };
+    expect(image.mimeType).toBe("image/png");
+    expect(Buffer.from(image.data, "base64").subarray(1, 4).toString()).toBe("PNG");
+    expect((img.content.find((x) => x.type === "text") as { text: string }).text).toContain("Transfer arrivals: (1,3)");
+    const pass = (await c.callTool({ name: "get_map_passability", arguments: { mapId: 3 } })) as CallToolResult;
+    const passText = (pass.content[0] as { text: string }).text;
+    expect(passText).toContain("3  # T . . . E o o o o o #");
+    expect(data(pass).grid).toBeDefined();
+    const tile = data(await c.callTool({ name: "get_tile_info", arguments: { mapId: 3, x: 2, y: 3 } }));
+    expect((tile.cells as { free: boolean }[])[0]!.free).toBe(true);
+    const path = data(await c.callTool({ name: "find_path", arguments: { mapId: 3, from: { x: 1, y: 3 }, to: { x: 4, y: 4 } } }));
+    expect(path).toMatchObject({ found: true, steps: 4 });
+    const info = data(await c.callTool({ name: "get_project_info", arguments: {} }));
+    expect(info.playerStart).toEqual({ mapId: 2, x: 8, y: 8 });
+    expect(info.warnings).toBeUndefined();
   });
 
   it("only selects configured projects", async () => {

@@ -18,6 +18,7 @@ import { listRefs, pageConditionRefs, projectView } from "../references/referenc
 import type { NameResolver, Ref } from "../references/ref-types.js";
 import { analyzeBlocks, analyzeEvent } from "../validation/flow-analysis.js";
 import { validateCommandList, validatePageSettings } from "../validation/event-validator.js";
+import { checkMovementRoutes, checkStartPosition, checkTransfers, mapAwareEventChecks, MapCache } from "../validation/map-validator.js";
 import { ReferenceChecker } from "../validation/reference-validator.js";
 import type { Diagnostic } from "../validation/diagnostics.js";
 import {
@@ -383,6 +384,12 @@ export class EventService {
     const diags = validateCommandList(list, { location: label, owner: t.kind, ...(t.kind === "map_event_page" ? { mapId: t.mapId } : {}) }, checker, parsed);
     if (owner.page && t.kind === "map_event_page") diags.push(...validatePageSettings(owner.page, label, checker, t.mapId));
     diags.push(...analyzeBlocks(parsed.logic.blocks, label, owner.page ? { trigger: owner.page.trigger } : {}));
+    const maps = new MapCache(view);
+    diags.push(...checkTransfers(parsed.logic.blocks, label, maps));
+    if (t.kind === "map_event_page") {
+      const m = maps.get(t.mapId);
+      if (m) diags.push(...checkMovementRoutes(parsed.logic.blocks, label, m, t.eventId, view));
+    }
     return diags;
   }
 
@@ -401,6 +408,8 @@ export class EventService {
   validateMap(mapId: number): Diagnostic[] {
     const map = this.project.readMap(mapId).data;
     const out: Diagnostic[] = [];
+    const view = projectView(this.project);
+    const maps = new MapCache(view);
     const seen = new Map<string, number>();
     for (const ev of map.events) {
       if (!ev) continue;
@@ -411,7 +420,10 @@ export class EventService {
       else seen.set(key, ev.id);
       for (let i = 0; i < ev.pages.length; i++) out.push(...this.validateList({ kind: "map_event_page", mapId, eventId: ev.id, pageIndex: i }));
       out.push(...analyzeEvent(ev, loc));
+      // Transfers and routes are already checked per page by validateList; add reachability here.
+      out.push(...mapAwareEventChecks(ev, mapId, maps, loc).filter((d) => d.code === "event.unreachable"));
     }
+    if ((view.json("data/System.json") as { startMapId?: number } | undefined)?.startMapId === mapId) out.push(...checkStartPosition(view, maps));
     return out;
   }
 

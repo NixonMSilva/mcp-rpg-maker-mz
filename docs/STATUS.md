@@ -1,7 +1,7 @@
 # Implementation status
 
 Status against the project specifications (eventing and database; kept outside the repository). "Done" means implemented **and** covered by automated tests
-(`npm test`: 158 tests, plus the read-only real-project corpus when available).
+(`npm test`: 177 tests, plus the read-only real-project corpus when available).
 
 Everything not done, or only partly done, is tracked in [LIMITATIONS.md](../LIMITATIONS.md).
 
@@ -16,6 +16,7 @@ Everything not done, or only partly done, is tracked in [LIMITATIONS.md](../LIMI
 | Safe event authoring | Done | Create/edit events and pages, block edits, settings, preview/apply, backups, rollback, stale detection |
 | Safe database authoring | Done | Create (templates), patch, duplicate, guarded delete, collections, notes, class curves, system allowlist |
 | Cross-domain workflows | Done | Batch change sets mixing database and event operations, name resolution, prompts, event templates |
+| Map awareness (render, passability, reachability, paths, map-aware validation) | Done | Engine passage rules; autotile tables verified against rmmz_core.js 1.10.0. See [proposals/MAP_AWARENESS.md](proposals/MAP_AWARENESS.md) |
 | Runtime testing (MCPBridge) | **Not started** | See L27 |
 
 ## Spec decisions taken

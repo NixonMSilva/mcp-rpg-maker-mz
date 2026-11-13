@@ -1,6 +1,7 @@
 import * as path from "node:path";
 import { DatabaseService } from "../database/database-service.js";
 import { EventService } from "../eventing/event-service.js";
+import { MapService } from "../maps/map-service.js";
 import { McpError } from "../project/errors.js";
 import { ProjectService } from "../project/project-service.js";
 import { TransactionManager } from "../project/transaction-manager.js";
@@ -26,6 +27,7 @@ export class ProjectSession {
   readonly tx: TransactionManager;
   readonly events: EventService;
   readonly db: DatabaseService;
+  readonly maps: MapService;
 
   constructor(root: string, config: ServerConfig) {
     this.project = ProjectService.open(root, { allowWrite: config.allowWrite, stateDir: config.stateDir });
@@ -34,6 +36,7 @@ export class ProjectSession {
     this.tx.registerValidator(databaseValidator(this.project));
     this.events = new EventService(this.project);
     this.db = new DatabaseService(this.project);
+    this.maps = new MapService(this.project);
   }
 }
 

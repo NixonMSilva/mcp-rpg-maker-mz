@@ -84,7 +84,9 @@ editor keeps data in memory and overwrites external changes when you save. The s
 
 ## How an agent uses it
 
-1. `get_project_info` → `list_maps` → `get_map_summary` / `describe_map_event`
+1. `get_project_info` → `list_maps` → `get_map_summary` / `describe_map_event`. To place or move events, look at the
+   map first: `render_map` (PNG with coordinates), `get_map_passability` (text grid of where the player can walk),
+   `get_tile_info` (is this spot free?) and `find_path` (ready-made movement routes).
 2. `get_event_logic` returns the Event IR with block ids and a `revision`. `get_event_ir_reference` documents every block.
 3. Edit with `append_event_blocks`, `insert_event_blocks`, `replace_event_block`, `move_event_block`,
    `remove_event_block`, `update_event_page_settings`, `create_map_event`, `create_event_from_template`, and so on.
@@ -101,11 +103,12 @@ Use `preview_changes` to create a record and the event that uses it in **one** a
   "else": [ { "type": "show_text", "text": "It's locked." } ] }
 ```
 
-## Tools (71)
+## Tools (75)
 
 | Area | Tools |
 |---|---|
 | Project | `get_project_info`, `list_projects`, `select_project`, `list_maps`, `get_map_summary`, `list_map_events`, `get_map_event`, `list_common_events`, `get_common_event`, `list_plugins`, `get_plugin_commands`, `list_switches`, `list_variables` |
+| Map awareness | `render_map`, `get_map_passability`, `get_tile_info`, `find_path` |
 | Event inspection | `get_event_page`, `describe_event_page`, `describe_map_event`, `get_event_logic`, `get_event_page_native`, `search_event_commands`, `trace_event_dependencies`, `find_references`, `get_event_ir_reference`, `list_event_templates` |
 | Event writes | `create_map_event`, `update_map_event`, `delete_map_event`, `create_event_page`, `clone_event_page`, `delete_event_page`, `update_event_page_settings`, `reorder_event_pages`, `update_common_event`, `create_event_from_template`, `append_event_blocks`, `insert_event_blocks`, `replace_event_block`, `remove_event_block`, `move_event_block`, `replace_event_logic` |
 | Validation | `validate_event_page`, `validate_map_events`, `validate_project_references`, `analyze_event_flow`, `database_validate_category` |

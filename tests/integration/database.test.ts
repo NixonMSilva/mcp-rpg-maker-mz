@@ -14,10 +14,9 @@ describe("database read model", () => {
     const s = session();
     const cats = s.db.listCategories();
     const byName = Object.fromEntries(cats.map((c) => [c.category, c]));
-    for (const c of ["actor", "class", "skill", "item", "weapon", "armor", "enemy", "troop", "state", "animation", "common_event", "system", "map_info"]) {
+    for (const c of ["actor", "class", "skill", "item", "weapon", "armor", "enemy", "troop", "state", "animation", "common_event", "system", "map_info", "tileset"]) {
       expect(byName[c]!.available, c).toBe(true);
     }
-    expect(byName.tileset!.available).toBe(false); // not part of the fixture: reported, not assumed
     expect(byName.skill!.maxId).toBe(12);
   });
 
