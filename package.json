@@ -1,0 +1,54 @@
+{
+  "name": "rpgmaker-mz-authoring-mcp",
+  "version": "0.1.0",
+  "description": "Local MCP server for semantic RPG Maker MZ event and database authoring",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NixonMSilva/mcp-rpg-maker-mz.git"
+  },
+  "homepage": "https://github.com/NixonMSilva/mcp-rpg-maker-mz#readme",
+  "bugs": {
+    "url": "https://github.com/NixonMSilva/mcp-rpg-maker-mz/issues"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "rpg-maker",
+    "rpg-maker-mz",
+    "claude"
+  ],
+  "private": true,
+  "bin": {
+    "rpgmz-mcp": "dist/index.js"
+  },
+  "main": "dist/index.js",
+  "engines": {
+    "node": ">=20.10.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepare": "npm run build",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "start": "node dist/index.js",
+    "docs": "npm run build && node scripts/gen-docs.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "typescript": "5.9.3",
+    "vitest": "5.1.0"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LIMITATIONS.md",
+    "docs"
+  ]
+}

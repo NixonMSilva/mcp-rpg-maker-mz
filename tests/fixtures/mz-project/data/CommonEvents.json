@@ -1,0 +1,7 @@
+[
+null,
+{"id":1,"list":[{"code":250,"indent":0,"parameters":[{"name":"Recovery","volume":90,"pitch":100,"pan":0}]},{"code":314,"indent":0,"parameters":[0,0]},{"code":0,"indent":0,"parameters":[]}],"name":"Heal Party","switchId":1,"trigger":0},
+{"id":2,"list":[{"code":117,"indent":0,"parameters":[3]},{"code":0,"indent":0,"parameters":[]}],"name":"Cycle A","switchId":1,"trigger":0},
+{"id":3,"list":[{"code":117,"indent":0,"parameters":[2]},{"code":0,"indent":0,"parameters":[]}],"name":"Cycle B","switchId":1,"trigger":0},
+{"id":4,"list":[{"code":0,"indent":0,"parameters":[]}],"name":"","switchId":1,"trigger":0}
+]

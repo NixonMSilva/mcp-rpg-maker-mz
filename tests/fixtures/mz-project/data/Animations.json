@@ -1,0 +1,5 @@
+[
+null,
+{"id":1,"displayType":0,"effectName":"Hit","flashTimings":[{"frame":0,"duration":20,"color":[255,255,255,170]}],"name":"Hit","offsetX":0,"offsetY":0,"rotation":{"x":0,"y":0,"z":0},"scale":100,"soundTimings":[{"frame":0,"se":{"name":"Hit1","pan":0,"pitch":100,"volume":90}}],"speed":100},
+{"id":2,"displayType":0,"effectName":"Sparkle","flashTimings":[{"frame":0,"duration":20,"color":[255,255,255,170]}],"name":"Sparkle","offsetX":0,"offsetY":0,"rotation":{"x":0,"y":0,"z":0},"scale":100,"soundTimings":[{"frame":0,"se":{"name":"Hit1","pan":0,"pitch":100,"volume":90}}],"speed":100}
+]

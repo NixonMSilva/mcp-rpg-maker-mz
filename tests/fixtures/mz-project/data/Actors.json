@@ -1,0 +1,6 @@
+[
+null,
+{"id":1,"battlerName":"Hero1","characterIndex":0,"characterName":"Heroes","classId":1,"equips":[1,1,0,3,0],"faceIndex":0,"faceName":"Heroes","traits":[],"initialLevel":1,"maxLevel":99,"name":"Aria","nickname":"","note":"","profile":""},
+{"id":2,"battlerName":"Hero2","characterIndex":1,"characterName":"Heroes","classId":2,"equips":[2,0,2,3,0],"faceIndex":1,"faceName":"Heroes","traits":[],"initialLevel":1,"maxLevel":99,"name":"Bram","nickname":"","note":"","profile":""},
+{"id":3,"battlerName":"Hero3","characterIndex":2,"characterName":"Heroes","classId":1,"equips":[3,0,0,3,0],"faceIndex":2,"faceName":"Heroes","traits":[],"initialLevel":1,"maxLevel":99,"name":"Cora","nickname":"","note":"","profile":""}
+]

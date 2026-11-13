@@ -1,0 +1,5 @@
+# Keep LF line endings in the repository and working copies on every OS.
+* text=auto eol=lf
+
+# The fixture project mimics RPG Maker MZ's exact on-disk bytes: never convert it.
+tests/fixtures/mz-project/** -text

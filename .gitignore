@@ -1,0 +1,13 @@
+node_modules/
+dist/
+coverage/
+.rpgmz-mcp/
+tests/.tmp/
+*.log
+
+# Machine-specific test configuration
+tests/real-data.local.json
+
+# Private specifications (kept local)
+EVENT_SPEC.md
+DATABASE_SPEC.md
