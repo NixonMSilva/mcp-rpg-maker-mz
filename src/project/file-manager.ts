@@ -61,6 +61,29 @@ export class FileManager {
     };
   }
 
+  /** Raw bytes of a project file (e.g. images), or null if it does not exist. */
+  readBytes(relPath: string): { bytes: Buffer; mtimeMs: number; size: number } | null {
+    const abs = this.guard.resolve(relPath);
+    try {
+      const stat = fs.statSync(abs);
+      if (!stat.isFile()) return null;
+      return { bytes: fs.readFileSync(abs), mtimeMs: stat.mtimeMs, size: stat.size };
+    } catch {
+      return null;
+    }
+  }
+
+  /** Stat-only check used by caches. */
+  statFile(relPath: string): { mtimeMs: number; size: number } | null {
+    try {
+      const stat = fs.statSync(this.guard.resolve(relPath));
+      return stat.isFile() ? { mtimeMs: stat.mtimeMs, size: stat.size } : null;
+    } catch (err) {
+      if (err instanceof McpError) throw err;
+      return null;
+    }
+  }
+
   /** Current revision of a file on disk, or null if it does not exist. */
   currentRevision(relPath: string): string | null {
     const abs = this.guard.resolve(relPath);

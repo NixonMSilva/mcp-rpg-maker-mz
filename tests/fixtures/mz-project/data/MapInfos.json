@@ -1,5 +1,6 @@
 [
 null,
 {"id":1,"expanded":false,"name":"FIELD","order":1,"parentId":0,"scrollX":0,"scrollY":0},
-{"id":2,"expanded":false,"name":"TEST_TOWN","order":2,"parentId":0,"scrollX":0,"scrollY":0}
+{"id":2,"expanded":false,"name":"TEST_TOWN","order":2,"parentId":0,"scrollX":0,"scrollY":0},
+{"id":3,"expanded":false,"name":"PASSABILITY_LAB","order":3,"parentId":0,"scrollX":0,"scrollY":0}
 ]

@@ -2,12 +2,13 @@ import type { NativeCommonEvent, NativeMap, NativeMapEvent, NativeTroop } from "
 import { CATEGORIES, CATEGORY_REF_KIND } from "../database/database-catalog.js";
 import { validateRecord } from "../database/database-service.js";
 import { deepEqual } from "../project/json-diff.js";
-import type { ProjectService } from "../project/project-service.js";
+import { ProjectService } from "../project/project-service.js";
 import type { Workspace, WorkspaceValidator } from "../project/transaction-manager.js";
 import { ReferenceIndex, type DataView } from "../references/reference-resolver.js";
 import { DiagnosticBag, type Diagnostic } from "./diagnostics.js";
 import { validateCommandList, validatePageSettings } from "./event-validator.js";
 import { analyzeBlocks, analyzeCommonEventCycles, analyzeEvent } from "./flow-analysis.js";
+import { checkStartPosition, checkTransfers, mapAwareEventChecks, MapCache } from "./map-validator.js";
 import { ReferenceChecker } from "./reference-validator.js";
 import { parseCommandList } from "../eventing/ir/parser.js";
 
@@ -31,6 +32,7 @@ export function eventValidator(project: ProjectService): WorkspaceValidator {
     const view = stagedView(ws);
     const checker = ReferenceChecker.forProject(project, view);
     let removedEvents: { mapId: number; eventId: number; name: string }[] = [];
+    const maps = new MapCache(view);
 
     for (const rel of changed) {
       const m = MAP_FILE.exec(rel);
@@ -48,6 +50,7 @@ export function eventValidator(project: ProjectService): WorkspaceValidator {
             continue;
           }
           bag.merge(validateEvent(after, mapId, staged, checker));
+          if (Array.isArray(after.pages) && after.pages.length) bag.merge(mapAwareEventChecks(after, mapId, maps, `Map ${mapId} / Event ${id} [${after.name}]`));
         }
         continue;
       }
@@ -62,6 +65,7 @@ export function eventValidator(project: ProjectService): WorkspaceValidator {
           const parsed = parseCommandList(ce.list, label);
           bag.merge(validateCommandList(ce.list, { location: label, owner: "common_event" }, checker, parsed));
           bag.merge(analyzeBlocks(parsed.logic.blocks, label, { trigger: ce.trigger === 1 ? 3 : undefined }));
+          bag.merge(checkTransfers(parsed.logic.blocks, label, maps));
         });
         if (anyListChanged) bag.merge(analyzeCommonEventCycles(staged));
         continue;
@@ -77,6 +81,11 @@ export function eventValidator(project: ProjectService): WorkspaceValidator {
           });
         });
       }
+    }
+
+    const startMap = (view.json("data/System.json") as { startMapId?: number } | undefined)?.startMapId;
+    if (changed.includes("data/System.json") || (typeof startMap === "number" && changed.includes(`data/${ProjectService.mapFileName(startMap)}`))) {
+      bag.merge(checkStartPosition(view, maps));
     }
 
     if (removedEvents.length) {

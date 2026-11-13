@@ -3,6 +3,8 @@ import { z } from "zod";
 import { parsePluginHeader } from "../../adapters/rpg-maker-mz/plugin-header.js";
 import { notFound } from "../../project/errors.js";
 import { SUPPORTED_MZ_VERSIONS } from "../../project/project-service.js";
+import { projectView } from "../../references/reference-resolver.js";
+import { checkStartPosition, MapCache } from "../../validation/map-validator.js";
 import type { AppContext } from "../context.js";
 import { applyReport, changeSetReport, handler, ok } from "../tool-helpers.js";
 
@@ -28,6 +30,8 @@ export function registerProjectTools(server: McpServer, ctx: AppContext): void {
         plugins = `unreadable: ${(err as Error).message}`;
       }
       const sys = p.system().data;
+      const view = projectView(p);
+      const startChecks = checkStartPosition(view, new MapCache(view));
       return ok(`Project ${String(sys.gameTitle ?? "")} at ${p.root}`, {
         root: p.root,
         gameTitle: sys.gameTitle,
@@ -42,6 +46,8 @@ export function registerProjectTools(server: McpServer, ctx: AppContext): void {
         mapCount: maps,
         dataFiles: p.listDataFiles(),
         pluginCount: plugins,
+        playerStart: { mapId: sys.startMapId, x: sys.startX, y: sys.startY },
+        ...(startChecks.length ? { warnings: startChecks } : {}),
         conventions: [
           "pageIndex is zero-based (Page 1 = pageIndex 0); later pages win when several pages' conditions are met.",
           "All writes are previewed as change sets, validated, backed up and applied atomically with apply_changes.",

@@ -38,7 +38,7 @@ done, and update the tests.
 ## Validation and analysis
 
 - **L9. Asset references are not validated.** Character, face, battler, picture and audio file names are not checked
-  against `img/` or `audio/`. The templates' default graphics (`!Chest`, `!Door1`, `!Switch1`) assume the default
+  against `img/` or `audio/` by the validators. Only `render_map` reports missing tileset and character images. The templates' default graphics (`!Chest`, `!Door1`, `!Switch1`) assume the default
   assets exist.
 - **L10. Flow analysis is heuristic and partial.** "Self switches never reset where a reset may be expected" is only
   partly covered (set but never read). The switch check reports "set but never read".
@@ -48,6 +48,18 @@ done, and update the tests.
 - **L12. Plugin schemas are inferred.** Command schemas come from `@command`/`@arg` annotations in the default-language
   header block only. There are no adapters for popular plugins (VisuMZ, etc.).
 - **L13. Design diagnostics are fixed.** Thresholds and rules are not configurable per project (DATABASE_SPEC §10.3).
+
+## Maps
+
+- **L28. Map analysis assumes one game state.** Event pages, blocking events and reachability use an assumed state
+  (default: all switches OFF). Pass `assume` to test another one. Item conditions are always treated as unmet, and
+  moving NPCs are treated as standing on their start cell.
+- **L29. Arrivals through variables are unknown.** Reachability starts from the player start and direct Transfer Player
+  destinations only. Transfers that use variables, plugin teleports and scripts are not seen.
+- **L30. The route check is a simulation of fixed routes only.** Routes with random/toward-player/forward moves,
+  scripts or `through_on` stop the simulation, and routes inside branches mark the character's position unknown.
+- **L31. Rendering is a static frame.** Water and waterfalls use animation frame 0. Parallax backgrounds, pictures,
+  weather, tile animations and plugin graphics are not drawn. Encrypted images (`.png_`) are reported as missing.
 
 ## Database
 

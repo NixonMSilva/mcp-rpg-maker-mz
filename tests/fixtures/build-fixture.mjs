@@ -8,6 +8,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import zlib from "node:zlib";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "mz-project");
 fs.rmSync(root, { recursive: true, force: true });
@@ -257,6 +258,7 @@ writeArr("CommonEvents.json", [
 writeArr("MapInfos.json", [
   { id: 1, expanded: false, name: "FIELD", order: 1, parentId: 0, scrollX: 0, scrollY: 0 },
   { id: 2, expanded: false, name: "TEST_TOWN", order: 2, parentId: 0, scrollX: 0, scrollY: 0 },
+  { id: 3, expanded: false, name: "PASSABILITY_LAB", order: 3, parentId: 0, scrollX: 0, scrollY: 0 },
 ]);
 
 const names = (n, named) => range(n + 1, (i) => named[i] ?? "");
@@ -362,11 +364,12 @@ const mapHeader = (displayName, width, height) => ({
   tilesetId: 1,
   width,
 });
-function writeMap(file, header, events) {
+// Layer 0 of the plain maps is the A2 floor (kind 16, shape 0); everything else is empty.
+const FLOOR = 2816;
+function writeMap(file, header, events, data = floorData(header.width, header.height)) {
   const head = Object.keys(header)
     .map((k) => JSON.stringify(k) + ":" + JSON.stringify(header[k]))
     .join(",");
-  const data = new Array(header.width * header.height * 6).fill(0);
   fs.writeFileSync(D(file), "{\n" + head + ",\n\"data\":" + JSON.stringify(data) + ",\n\"events\":" + arr(events) + "\n}");
 }
 
@@ -555,6 +558,135 @@ events[10] = null; // free slot: the next created event must get ID 10
 events[11] = ev(11, "AfterGap", 7, 6, [page({ priorityType: 0 })]);
 
 writeMap("Map002.json", mapHeader("Test Town", 20, 15), events);
+
+// ------------------------------------------------------------------ map awareness (tileset, images, lab map)
+
+function floorData(width, height) {
+  const data = new Array(width * height * 6).fill(0);
+  data.fill(FLOOR, 0, width * height);
+  return data;
+}
+
+// Minimal PNG writer (8-bit RGBA, filter 0) for the synthetic images.
+const crcTable = Array.from({ length: 256 }, (_v, n) => {
+  let c = n;
+  for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+  return c >>> 0;
+});
+const crc32 = (buf) => {
+  let c = 0xffffffff;
+  for (const b of buf) c = crcTable[(c ^ b) & 0xff] ^ (c >>> 8);
+  return (c ^ 0xffffffff) >>> 0;
+};
+function png(width, height, pixel) {
+  const raw = Buffer.alloc((width * 4 + 1) * height);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const [r, g, b, a] = pixel(x, y);
+      raw.set([r, g, b, a], y * (width * 4 + 1) + 1 + x * 4);
+    }
+  }
+  const chunk = (type, body) => {
+    const head = Buffer.alloc(8);
+    head.writeUInt32BE(body.length, 0);
+    head.write(type, 4, "latin1");
+    const crc = Buffer.alloc(4);
+    crc.writeUInt32BE(crc32(Buffer.concat([head.subarray(4), body])), 0);
+    return Buffer.concat([head, body, crc]);
+  };
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(width, 0);
+  ihdr.writeUInt32BE(height, 4);
+  ihdr[8] = 8;
+  ihdr[9] = 6;
+  return Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), chunk("IHDR", ihdr), chunk("IDAT", zlib.deflateSync(raw, { level: 9 })), chunk("IEND", Buffer.alloc(0))]);
+}
+
+// Synthetic sheets: every 24x24 quarter-tile has its own color, so tests can tell which quarter was drawn where.
+// A1 = blue channel 200, A2 = blue 40, A4 = blue 120, B = one color per 48x48 tile.
+const img = (dir, name, buf) => {
+  fs.mkdirSync(path.join(root, "img", dir), { recursive: true });
+  fs.writeFileSync(path.join(root, "img", dir, `${name}.png`), buf);
+};
+const quarterColor = (blue) => (x, y) => [(Math.floor(x / 24) * 8) % 256, (60 + Math.floor(y / 24) * 8) % 256, blue, 255];
+img("tilesets", "Fix_A1", png(768, 576, quarterColor(200)));
+img("tilesets", "Fix_A2", png(768, 576, quarterColor(40)));
+img("tilesets", "Fix_A4", png(768, 720, quarterColor(120)));
+img("tilesets", "Fix_B", png(768, 768, (x, y) => (Math.floor(x / 48) + Math.floor(y / 48) === 0 ? [0, 0, 0, 0] : [Math.floor(x / 48) * 16, Math.floor(y / 48) * 16, 220, 255])));
+// One 12x8 frame sheet (48x48 frames); each frame is a colored 24x40 figure on transparency.
+img("characters", "People1", png(576, 384, (x, y) => {
+  const fx = Math.floor(x / 48), fy = Math.floor(y / 48), lx = x % 48, ly = y % 48;
+  return lx >= 12 && lx < 36 && ly >= 8 ? [fx * 20, fy * 30, 255, 255] : [0, 0, 0, 0];
+}));
+
+// Tile ids used by the lab map.
+const A1_WATER = 2048; // A1 kind 0
+const A2_TABLE = 2864; // A2 kind 17 (counter flag => drawn as a table)
+const A4_WALL_TOP = 5888; // A4 kind 80
+const A4_WALL_SIDE = 6272 + 15; // A4 kind 88, shape 15
+const B_WALL = 1, B_STAR = 2, B_FENCE_NORTH = 4, B_LADDER = 5, B_DAMAGE = 6, B_BUSH = 7;
+
+const flags = new Array(8192).fill(0);
+flags[0] = 0x10;
+const kindFlags = (base, kind, value) => flags.fill(value, base + kind * 48, base + kind * 48 + 48);
+kindFlags(2048, 0, 0x0f); // water: impassable on foot
+kindFlags(2048, 16, 0x00); // floor
+kindFlags(2048, 17, 0x8f); // table: counter + impassable
+kindFlags(2048, 80, 0x0f); // wall top
+kindFlags(2048, 88, 0x0f); // wall side
+flags[B_WALL] = 0x0f;
+flags[B_STAR] = 0x10;
+flags[B_FENCE_NORTH] = 0x08; // blocks the cell's north side only
+flags[B_LADDER] = 0x20;
+flags[B_DAMAGE] = 0x100 | (3 << 12); // damage floor, terrain tag 3
+flags[B_BUSH] = 0x40;
+writeArr("Tilesets.json", [
+  { id: 1, flags, mode: 1, name: "Fixture", note: "", tilesetNames: ["Fix_A1", "Fix_A2", "", "Fix_A4", "", "Fix_B", "", "", ""] },
+]);
+
+// Map 3 "Passability Lab" (12x9):
+//   y0  W W W W W W W W W W W W     W wall top, w wall side (bottom row)
+//   y1  W . . . . W . . 2 . r W     2 clerk behind the table, r region 7
+//   y2  W . f . . W . . T . r W     f fence (north side blocked), T table/counter
+//   y3  W @ . . . 1 . . . . . W     1 guard in the doorway (blocks until switch 1), @ transfer arrival
+//   y4  W . . * . W . 4 . . . W     * star decoration (passable), 4 tile event acting as a wall
+//   y5  W W W W W W . . . 5 . W     5 teleporter (transfer to (1,3))
+//   y6  W . 3 . . W . . . . . W     3 hidden event in a closed room
+//   y7  W . . . . W ~ " ! H . W     ~ water, " bush, ! damage, H ladder
+//   y8  w w w w w w w w w w w w
+{
+  const W = 12, H = 9;
+  const data = floorData(W, H);
+  const set = (x, y, z, id) => (data[(z * H + y) * W + x] = id);
+  for (let x = 0; x < W; x++) {
+    set(x, 0, 0, A4_WALL_TOP);
+    set(x, 8, 0, A4_WALL_SIDE);
+  }
+  for (let y = 1; y < 8; y++) {
+    set(0, y, 0, A4_WALL_TOP);
+    set(11, y, 0, A4_WALL_TOP);
+    if (y !== 3) set(5, y, 0, A4_WALL_TOP);
+  }
+  for (let x = 0; x < 5; x++) set(x, 5, 0, A4_WALL_TOP);
+  set(2, 2, 2, B_FENCE_NORTH);
+  set(8, 2, 1, A2_TABLE);
+  set(3, 4, 3, B_STAR);
+  set(6, 7, 0, A1_WATER);
+  set(7, 7, 2, B_BUSH);
+  set(8, 7, 2, B_DAMAGE);
+  set(9, 7, 2, B_LADDER);
+  set(6, 1, 4, 0b0101); // shadow on the left half
+  set(10, 1, 5, 7);
+  set(10, 2, 5, 7);
+  const talk = (text) => [c(101, 0, ["", 0, 0, 2, ""]), c(401, 0, [text]), c(0, 0)];
+  const lab = [null];
+  lab[1] = ev(1, "Guard", 5, 3, [page({ list: talk("Halt.") }), page({ conditions: { switch1Valid: true, switch1Id: 1 }, priorityType: 0, list: talk("Go ahead.") })]);
+  lab[2] = ev(2, "Clerk", 8, 1, [page({ list: talk("Welcome!") })]);
+  lab[3] = ev(3, "Hidden", 2, 6, [page({ list: talk("Nobody can reach me.") })]);
+  lab[4] = ev(4, "Crate", 7, 4, [page({ image: { tileId: B_WALL, characterName: "" }, priorityType: 0 })]);
+  lab[5] = ev(5, "Teleporter", 9, 5, [page({ list: [c(201, 0, [0, 3, 1, 3, 0, 0]), c(0, 0)] })]);
+  writeMap("Map003.json", mapHeader("Passability Lab", W, H), lab, data);
+}
 
 // ------------------------------------------------------------------ project files
 
