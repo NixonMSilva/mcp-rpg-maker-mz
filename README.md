@@ -10,6 +10,8 @@ raw JSON.
   traits/effects/actions/drops collections, note tags, templates, and reference analysis.
 - **Shared safety layer**: preview-first change sets, full validation of the resulting state, backups, atomic writes,
   stale-edit detection, a transaction log and rollback.
+- **Workflow skills**: a Claude Code plugin with skills for NPCs, quests, cutscenes, map placement, database design, audits
+  and more. See [Skills](#skills).
 
 Supported: RPG Maker MZ 1.x project data (verified on 1.10.0). Node.js 20.10+ to run, 22.12+ to develop and test.
 Known limitations: [LIMITATIONS.md](LIMITATIONS.md). Milestone status: [docs/STATUS.md](docs/STATUS.md).
@@ -102,6 +104,42 @@ Use `preview_changes` to create a record and the event that uses it in **one** a
   "then": [ { "type": "show_text", "text": "The gate opens." }, { "type": "control_switches", "switchId": 4, "value": "on" } ],
   "else": [ { "type": "show_text", "text": "It's locked." } ] }
 ```
+
+## Skills
+
+The repo is also a Claude Code plugin (`rpgmz`) with **workflow skills**. They teach an agent how to combine the tools for common
+RPG Maker tasks: which tools to call in which order, engine rules that are easy to get wrong, and when to stop and ask the user. Claude
+loads a skill automatically when a request matches its description, and you can also invoke one by name.
+
+| Skill | Use it for |
+|---|---|
+| [`safe-changes`](skills/safe-changes/SKILL.md) | The commit loop every write ends with: preview, review diagnostics, acknowledge or confirm, apply, verify, roll back |
+| [`explore-project`](skills/explore-project/SKILL.md) | Getting oriented and explaining maps, events, common events, switches/variables, plugins and the database |
+| [`map-placement`](skills/map-placement/SKILL.md) | Choosing free, reachable tiles for events and transfer destinations, and generating movement routes |
+| [`npc-dialogue`](skills/npc-dialogue/SKILL.md) | Talking NPCs: dialogue, choices, state-dependent branches, shops, inns |
+| [`quest-npc`](skills/quest-npc/SKILL.md) | Multi-stage quests driven by a stage variable, item turn-ins and rewards, as an explicit state machine |
+| [`interactables`](skills/interactables/SKILL.md) | Treasure chests, doors and transfer tiles, levers and switch-controlled gates |
+| [`cutscene`](skills/cutscene/SKILL.md) | One-shot story scenes (step-on or switch-gated autorun) with movement, fades, audio and waits |
+| [`edit-event`](skills/edit-event/SKILL.md) | Minimal, revision-safe edits to existing map events, common events and troop pages |
+| [`database-design`](skills/database-design/SKILL.md) | Creating and balancing items, skills, equipment, enemies, states, actors, class curves and note tags |
+| [`impact-analysis`](skills/impact-analysis/SKILL.md) | Finding every use of a switch, variable, record or event before deleting or repurposing it |
+| [`project-audit`](skills/project-audit/SKILL.md) | Read-only health check: broken references, flow problems, unreachable areas, events that never trigger |
+| [`plugin-commands`](skills/plugin-commands/SKILL.md) | Authoring `plugin_command` blocks from the schemas plugins declare |
+
+The skills don't start the MCP server. Register it as described above. Skills refer to tools by their bare names
+(`get_map_summary`). Claude Code exposes them as `mcp__<server name>__<tool>`.
+
+**Install as a plugin** (Claude Code):
+
+```text
+/plugin marketplace add NixonMSilva/mcp-rpg-maker-mz
+/plugin install rpgmz@rpgmaker-mz-mcp
+```
+
+Plugin skills are namespaced, so to invoke one explicitly type `/rpgmz:npc-dialogue`. Update later with `/plugin marketplace update rpgmaker-mz-mcp`.
+
+**Or copy them**: copy the folders under [`skills/`](skills/) into `~/.claude/skills/` (all your projects) or into
+`<your project>/.claude/skills/` (one project). Copied skills are invoked without a namespace, for example `/npc-dialogue`.
 
 ## Tools (75)
 

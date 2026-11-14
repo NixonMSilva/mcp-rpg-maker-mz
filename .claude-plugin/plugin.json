@@ -1,0 +1,13 @@
+{
+  "name": "rpgmz",
+  "version": "0.1.0",
+  "description": "Workflow skills for authoring RPG Maker MZ projects with the rpgmaker-mz MCP server: safe change sets, map-aware placement, NPCs, quests, cutscenes, chests/doors/levers, event edits, database design, impact analysis, audits and plugin commands.",
+  "author": {
+    "name": "NixonMSilva",
+    "url": "https://github.com/NixonMSilva"
+  },
+  "homepage": "https://github.com/NixonMSilva/mcp-rpg-maker-mz#skills",
+  "repository": "https://github.com/NixonMSilva/mcp-rpg-maker-mz",
+  "license": "MIT",
+  "keywords": ["rpg-maker", "rpg-maker-mz", "mcp", "gamedev", "skills"]
+}

@@ -1,0 +1,19 @@
+{
+  "name": "rpgmaker-mz-mcp",
+  "owner": {
+    "name": "NixonMSilva",
+    "url": "https://github.com/NixonMSilva"
+  },
+  "metadata": {
+    "description": "Claude Code plugins for the RPG Maker MZ authoring MCP server."
+  },
+  "plugins": [
+    {
+      "name": "rpgmz",
+      "source": "./",
+      "description": "Workflow skills for authoring RPG Maker MZ projects with the rpgmaker-mz MCP server.",
+      "version": "0.1.0",
+      "category": "development"
+    }
+  ]
+}
